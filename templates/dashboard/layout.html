@@ -1,0 +1,165 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="mobile-header-content">
+            <div class="logo">
+                <i class="fas fa-book-open"></i>
+                <span>Library MS</span>
+            </div>
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="{{ url_for('dashboard') }}" class="logo">
+                <i class="fas fa-book-open"></i>
+                <span>Library MS</span>
+            </a>
+        </div>
+        <div class="sidebar-content">
+            <div class="sidebar-group">
+                <div class="sidebar-group-label">Navigation</div>
+                <div class="sidebar-group-content">
+                    <ul class="sidebar-menu">
+                        <li class="sidebar-menu-item">
+                            <a href="{{ url_for('dashboard') }}" class="sidebar-menu-button {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                                <i class="fas fa-home"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-menu-item">
+                            <a href="{{ url_for('books') }}" class="sidebar-menu-button {% if request.endpoint == 'books' %}active{% endif %}">
+                                <i class="fas fa-book-open"></i>
+                                <span>View Books</span>
+                            </a>
+                        </li>
+                        {% if session.user_role == 'admin' %}
+                        <li class="sidebar-menu-item">
+                            <a href="{{ url_for('add_book') }}" class="sidebar-menu-button {% if request.endpoint == 'add_book' %}active{% endif %}">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Add Book</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if session.user_role == 'admin' %}
+                        <li class="sidebar-menu-item">
+                            <a href="{{ url_for('issue_book') }}" class="sidebar-menu-button {% if request.endpoint == 'issue_book' %}active{% endif %}">
+                                <i class="fas fa-book"></i>
+                                <span>Issue Book</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="sidebar-menu-item">
+                            <a href="{{ url_for('request_book') }}" class="sidebar-menu-button {% if request.endpoint == 'request_book' %}active{% endif %}">
+                                <i class="fas fa-book"></i>
+                                <span>Request Book</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="sidebar-menu-item">
+                            <a href="{{ url_for('issued_books') }}" class="sidebar-menu-button {% if request.endpoint == 'issued_books' %}active{% endif %}">
+                                <i class="fas fa-bookmark"></i>
+                                <span>{% if session.user_role == 'admin' %}Issued Books{% else %}My Books{% endif %}</span>
+                            </a>
+                        </li>
+                        {% if session.user_role == 'admin' %}
+                        <li class="sidebar-menu-item">
+                            <a href="{{ url_for('users') }}" class="sidebar-menu-button {% if request.endpoint == 'users' %}active{% endif %}">
+                                <i class="fas fa-users"></i>
+                                <span>Manage Users</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <i class="fas fa-user"></i>
+                <div>
+                    <p class="user-name">{{ session.user_name }}</p>
+                    <p class="user-role">{{ session.user_role }}</p>
+                </div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-button">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="spacer"></div>
+            <a href="{{ url_for('logout') }}" class="logout-button desktop-only">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
+        </div>
+        <div class="content">
+            {% block dashboard_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mobile menu toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        
+        menuToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('open');
+            mobileMenuOverlay.classList.toggle('active');
+            document.body.classList.toggle('menu-open');
+        });
+        
+        mobileMenuOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('open');
+            mobileMenuOverlay.classList.remove('active');
+            document.body.classList.remove('menu-open');
+        });
+        
+        // Sidebar toggle for desktop
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const dashboardContainer = document.querySelector('.dashboard-container');
+        
+        sidebarToggle.addEventListener('click', function() {
+            dashboardContainer.classList.toggle('sidebar-collapsed');
+        });
+        
+        // Close flash messages
+        const closeButtons = document.querySelectorAll('.flash-message .close-btn');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                this.parentElement.style.display = 'none';
+            });
+        });
+        
+        // Auto-hide flash messages after 5 seconds
+        setTimeout(function() {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(message => {
+                message.style.display = 'none';
+            });
+        }, 5000);
+    });
+</script>
+{% block dashboard_scripts %}{% endblock %}
+{% endblock %}

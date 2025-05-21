@@ -1,0 +1,168 @@
+{% extends "dashboard/layout.html" %}
+
+{% block title %}Request Book - Library Management System{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="request-book-page">
+    <h1 class="page-title">Request a Book</h1>
+
+    {% if books|length == 0 %}
+    <div class="alert">
+        <i class="fas fa-exclamation-circle"></i>
+        <div>
+            <h3>No books available</h3>
+            <p>All books are currently issued. Please check back later.</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="form-card">
+        <div class="form-header">
+            <h2>Request a Book</h2>
+            <p>Select a book you would like to borrow from the library.</p>
+        </div>
+        <div class="form-content">
+            <form action="{{ url_for('request_book') }}" method="POST" id="request-book-form">
+                <div class="form-group">
+                    <label for="book">Book</label>
+                    <select id="book" name="book" required>
+                        <option value="">Select a book</option>
+                        {% for book in books %}
+                        <option value="{{ book.id }}">{{ book.title }} by {{ book.author }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="issue_date">Issue Date</label>
+                        <div class="date-input-container">
+                            <input type="text" id="issue_date" name="issue_date" class="date-input" placeholder="Select date" required>
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                    </div>
+                    <div class="form-group half">
+                        <label for="return_date">Return Date (7 days)</label>
+                        <div class="date-input-container">
+                            <input type="text" id="return_date" class="date-input" placeholder="Auto-calculated" disabled>
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="form-footer">
+            <a href="{{ url_for('dashboard') }}" class="cancel-button">Cancel</a>
+            <button type="submit" form="request-book-form" class="submit-button">Request Book</button>
+        </div>
+    </div>
+
+    <div id="requestSummary" class="summary-card" style="display: none;">
+        <div class="summary-header">
+            <h2>Request Summary</h2>
+        </div>
+        <div class="summary-content">
+            <div class="summary-row">
+                <div class="summary-col">
+                    <h3>Book Details</h3>
+                    <p id="bookTitle" class="summary-text"></p>
+                    <p id="bookIsbn" class="summary-subtext"></p>
+                </div>
+            </div>
+            <div class="summary-row">
+                <div class="summary-col">
+                    <h3>Issue Date</h3>
+                    <p id="summaryIssueDate" class="summary-text"></p>
+                </div>
+                <div class="summary-col">
+                    <h3>Return Date</h3>
+                    <p id="summaryReturnDate" class="summary-text"></p>
+                </div>
+            </div>
+            <div class="alert info">
+                <i class="fas fa-exclamation-circle"></i>
+                <div>
+                    <h3>Note</h3>
+                    <p>Your request will need to be approved by an administrator before you can collect the book.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block dashboard_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize date picker
+        const issueDatePicker = flatpickr("#issue_date", {
+            dateFormat: "Y-m-d",
+            minDate: "today",
+            defaultDate: "today",
+            onChange: function(selectedDates, dateStr, instance) {
+                // Calculate return date (7 days later)
+                const returnDate = new Date(selectedDates[0]);
+                returnDate.setDate(returnDate.getDate() + 7);
+                
+                // Format return date
+                const returnDateStr = returnDate.toISOString().split('T')[0];
+                document.getElementById('return_date').value = returnDateStr;
+                
+                // Update summary
+                if (document.getElementById('summaryIssueDate')) {
+                    document.getElementById('summaryIssueDate').textContent = formatDate(dateStr);
+                    document.getElementById('summaryReturnDate').textContent = formatDate(returnDateStr);
+                }
+            }
+        });
+        
+        // Trigger change event to set initial return date
+        const today = new Date();
+        const returnDate = new Date(today);
+        returnDate.setDate(returnDate.getDate() + 7);
+        document.getElementById('return_date').value = returnDate.toISOString().split('T')[0];
+        
+        // Book selection
+        const bookSelect = document.getElementById('book');
+        const summaryCard = document.getElementById('requestSummary');
+        
+        if (bookSelect) {
+            bookSelect.addEventListener('change', function() {
+                const bookId = bookSelect.value;
+                
+                if (bookId) {
+                    // Fetch book details
+                    fetch(`/api/books/${bookId}`)
+                        .then(response => response.json())
+                        .then(book => {
+                            // Update summary
+                            document.getElementById('bookTitle').textContent = `${book.title} by ${book.author}`;
+                            document.getElementById('bookIsbn').textContent = `ISBN: ${book.isbn}`;
+                            
+                            // Show summary card
+                            summaryCard.style.display = 'block';
+                        });
+                } else {
+                    // Hide summary card if no book is selected
+                    summaryCard.style.display = 'none';
+                }
+            });
+        }
+        
+        // Helper function to format date
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+    });
+</script>
+{% endblock %}

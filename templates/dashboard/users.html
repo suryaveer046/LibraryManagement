@@ -1,0 +1,136 @@
+{% extends "dashboard/layout.html" %}
+
+{% block title %}Students Management - Library Management System{% endblock %}
+
+{% block dashboard_content %}
+<div class="users-page">
+    <h1 class="page-title">Students Management</h1>
+
+    <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search students by name, username, or roll number...">
+    </div>
+
+    <div class="table-container">
+        <table class="data-table" id="usersTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Roll Number</th>
+                    <th>Books Issued</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if students|length == 0 %}
+                <tr>
+                    <td colspan="5" class="empty-table">No students found</td>
+                </tr>
+                {% else %}
+                {% for student in students %}
+                <tr>
+                    <td class="student-name">{{ student.name }}</td>
+                    <td>{{ student.username }}</td>
+                    <td>{{ student.rollNo }}</td>
+                    <td>
+                        <div class="books-issued">
+                            <i class="fas fa-book"></i>
+                            <span>{{ student.issued_count }}</span>
+                            {% if student.has_requests %}
+                            <span class="badge outline">Requests Pending</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="dropdown-button">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <div class="dropdown-content">
+                                <a href="{{ url_for('edit_user', student_id=student.id) }}" class="dropdown-item">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <form action="{{ url_for('delete_user', student_id=student.id) }}" method="POST" class="delete-form">
+                                    <button type="submit" class="dropdown-item delete">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block dashboard_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const table = document.getElementById('usersTable');
+        const rows = table.getElementsByTagName('tr');
+        
+        searchInput.addEventListener('keyup', function() {
+            const term = searchInput.value.toLowerCase();
+            
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                
+                if (cells.length === 0) continue; // Skip empty rows
+                
+                let found = false;
+                for (let j = 0; j < 3; j++) { // Search in name, username, roll number
+                    if (cells[j].textContent.toLowerCase().indexOf(term) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                row.style.display = found ? '' : 'none';
+            }
+        });
+        
+        // Delete confirmation
+        const deleteForms = document.querySelectorAll('.delete-form');
+        deleteForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('Are you sure you want to delete this student?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+        
+        // Dropdown menu
+        const dropdownButtons = document.querySelectorAll('.dropdown-button');
+        dropdownButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Close all other dropdowns
+                document.querySelectorAll('.dropdown-content').forEach(content => {
+                    if (content !== this.nextElementSibling) {
+                        content.classList.remove('show');
+                    }
+                });
+                
+                // Toggle current dropdown
+                this.nextElementSibling.classList.toggle('show');
+            });
+        });
+        
+        // Close dropdowns when clicking outside
+        window.addEventListener('click', function(e) {
+            if (!e.target.matches('.dropdown-button') && !e.target.matches('.fa-ellipsis-h')) {
+                document.querySelectorAll('.dropdown-content').forEach(content => {
+                    content.classList.remove('show');
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

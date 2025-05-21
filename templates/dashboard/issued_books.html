@@ -1,0 +1,316 @@
+{% extends "dashboard/layout.html" %}
+
+{% block title %}{% if session.user_role == 'admin' %}Issued Books{% else %}My Books{% endif %} - Library Management System{% endblock %}
+
+{% block dashboard_content %}
+<div class="issued-books-page">
+    <h1 class="page-title">{% if session.user_role == 'admin' %}All Issued Books{% else %}My Issued Books{% endif %}</h1>
+
+    <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search by book title, author, or student name...">
+    </div>
+
+    <div class="table-container">
+        <table class="data-table" id="issuedBooksTable">
+            <thead>
+                <tr>
+                    <th>Book Title</th>
+                    <th>Author</th>
+                    {% if session.user_role == 'admin' %}
+                    <th>Student</th>
+                    {% endif %}
+                    <th>Issue Date</th>
+                    <th>Return Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if issues|length == 0 %}
+                <tr>
+                    <td colspan="{% if session.user_role == 'admin' %}7{% else %}6{% endif %}" class="empty-table">No issued books found</td>
+                </tr>
+                {% else %}
+                {% for issue in issues %}
+                <tr>
+                    <td class="book-title">{{ issue.book.title }}</td>
+                    <td>{{ issue.book.author }}</td>
+                    {% if session.user_role == 'admin' %}
+                    <td>{{ issue.student.name }}</td>
+                    {% endif %}
+                    <td>{{ issue.issueDate }}</td>
+                    <td>{{ issue.returnDate }}</td>
+                    <td>
+                        {% if issue.status == 'requested' %}
+                        <span class="badge yellow">Requested</span>
+                        {% elif issue.returnDate < today %}
+                        <span class="badge red">Overdue</span>
+                        {% else %}
+                        <span class="badge blue">Issued</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="dropdown-button">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <div class="dropdown-content">
+                                {% if session.user_role == 'admin' and issue.status == 'requested' %}
+                                <form action="{{ url_for('approve_request', request_id=issue.id) }}" method="POST">
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="fas fa-check-circle"></i> Approve Request
+                                    </button>
+                                </form>
+                                {% endif %}
+                                {% if session.user_role == 'admin' or issue.status != 'requested' %}
+                                <form action="{{ url_for('return_book', issue_id=issue.id) }}" method="POST">
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="fas fa-check-circle"></i> {% if issue.status == 'requested' %}Cancel Request{% else %}Return Book{% endif %}
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Return Book Modal -->
+<div id="returnModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="returnModalTitle">Return Book</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="returnModalDesc">Are you sure you want to mark this book as returned?</p>
+            <div id="returnModalDetails" class="modal-details">
+                <p id="returnModalBook" class="modal-book-title"></p>
+                <p id="returnModalAuthor" class="modal-book-author"></p>
+                <p id="returnModalStudent" class="modal-student"></p>
+                <div class="modal-dates">
+                    <span id="returnModalIssueDate"></span>
+                    <span id="returnModalReturnDate"></span>
+                </div>
+                <div id="returnModalOverdue" class="alert red" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div>
+                        <h3>Overdue</h3>
+                        <p id="returnModalOverdueText"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="returnModalCancel" class="cancel-button">Cancel</button>
+            <button id="returnModalConfirm" class="submit-button">Confirm Return</button>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Request Modal -->
+<div id="approveModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Approve Book Request</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to approve this book request?</p>
+            <div id="approveModalDetails" class="modal-details">
+                <p id="approveModalBook" class="modal-book-title"></p>
+                <p id="approveModalAuthor" class="modal-book-author"></p>
+                <p id="approveModalStudent" class="modal-student"></p>
+                <div class="modal-dates">
+                    <span id="approveModalIssueDate"></span>
+                    <span id="approveModalReturnDate"></span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="approveModalCancel" class="cancel-button">Cancel</button>
+            <button id="approveModalConfirm" class="submit-button">Approve Request</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block dashboard_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const table = document.getElementById('issuedBooksTable');
+        const rows = table.getElementsByTagName('tr');
+        
+        searchInput.addEventListener('keyup', function() {
+            const term = searchInput.value.toLowerCase();
+            
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                
+                if (cells.length === 0) continue; // Skip empty rows
+                
+                let found = false;
+                const searchLimit = {{ 'cells.length - 3' if session.user_role == 'admin' else 'cells.length - 2' }};
+                for (let j = 0; j < searchLimit; j++) { // Search in title, author, student (if admin)
+                    if (cells[j].textContent.toLowerCase().indexOf(term) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                row.style.display = found ? '' : 'none';
+            }
+        });
+        
+        // Dropdown menu
+        const dropdownButtons = document.querySelectorAll('.dropdown-button');
+        dropdownButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Close all other dropdowns
+                document.querySelectorAll('.dropdown-content').forEach(content => {
+                    if (content !== this.nextElementSibling) {
+                        content.classList.remove('show');
+                    }
+                });
+                
+                // Toggle current dropdown
+                this.nextElementSibling.classList.toggle('show');
+            });
+        });
+        
+        // Close dropdowns when clicking outside
+        window.addEventListener('click', function(e) {
+            if (!e.target.matches('.dropdown-button') && !e.target.matches('.fa-ellipsis-h')) {
+                document.querySelectorAll('.dropdown-content').forEach(content => {
+                    content.classList.remove('show');
+                });
+            }
+        });
+        
+        // Modal functionality
+        const returnModal = document.getElementById('returnModal');
+        const approveModal = document.getElementById('approveModal');
+        const closeButtons = document.querySelectorAll('.close-modal');
+        
+        // Close modal when clicking on X
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                returnModal.style.display = 'none';
+                approveModal.style.display = 'none';
+            });
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            if (e.target === returnModal) {
+                returnModal.style.display = 'none';
+            }
+            if (e.target === approveModal) {
+                approveModal.style.display = 'none';
+            }
+        });
+        
+        // Cancel buttons
+        document.getElementById('returnModalCancel').addEventListener('click', function() {
+            returnModal.style.display = 'none';
+        });
+        
+        document.getElementById('approveModalCancel').addEventListener('click', function() {
+            approveModal.style.display = 'none';
+        });
+        
+        // Return book confirmation
+        const returnForms = document.querySelectorAll('form[action^="{{ url_for("return_book", issue_id="") }}"]');
+        returnForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const row = this.closest('tr');
+                const cells = row.getElementsByTagName('td');
+                const bookTitle = cells[0].textContent;
+                const author = cells[1].textContent;
+                const isRequested = cells[{{ '5' if session.user_role == 'admin' else '4' }}].querySelector('.badge').textContent === 'Requested';
+                
+                // Set modal content
+                document.getElementById('returnModalTitle').textContent = isRequested ? 'Cancel Book Request' : 'Return Book';
+                document.getElementById('returnModalDesc').textContent = isRequested ? 
+                    'Are you sure you want to cancel this book request?' : 
+                    'Are you sure you want to mark this book as returned?';
+                document.getElementById('returnModalBook').textContent = bookTitle;
+                document.getElementById('returnModalAuthor').textContent = `by ${author}`;
+                
+                {% if session.user_role == 'admin' %}
+                const student = cells[2].textContent;
+                document.getElementById('returnModalStudent').textContent = `Issued to: ${student}`;
+                document.getElementById('returnModalStudent').style.display = 'block';
+                {% else %}
+                document.getElementById('returnModalStudent').style.display = 'none';
+                {% endif %}
+                
+                const issueDate = cells[{{ '3' if session.user_role == 'admin' else '2' }}].textContent;
+                const returnDate = cells[{{ '4' if session.user_role == 'admin' else '3' }}].textContent;
+                document.getElementById('returnModalIssueDate').textContent = `Issue Date: ${issueDate}`;
+                document.getElementById('returnModalReturnDate').textContent = `Return Date: ${returnDate}`;
+                
+                // Check if overdue
+                const isOverdue = cells[{{ '5' if session.user_role == 'admin' else '4' }}].querySelector('.badge').textContent === 'Overdue';
+                if (isOverdue && !isRequested) {
+                    document.getElementById('returnModalOverdue').style.display = 'flex';
+                    document.getElementById('returnModalOverdueText').textContent = `This book is overdue. It was due on ${returnDate}.`;
+                } else {
+                    document.getElementById('returnModalOverdue').style.display = 'none';
+                }
+                
+                // Set confirm button action
+                document.getElementById('returnModalConfirm').textContent = isRequested ? 'Cancel Request' : 'Confirm Return';
+                document.getElementById('returnModalConfirm').onclick = () => {
+                    form.submit();
+                };
+                
+                // Show modal
+                returnModal.style.display = 'block';
+            });
+        });
+        
+        // Approve request confirmation
+        const approveForms = document.querySelectorAll('form[action^="{{ url_for("approve_request", request_id="") }}"]');
+        approveForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const row = this.closest('tr');
+                const cells = row.getElementsByTagName('td');
+                const bookTitle = cells[0].textContent;
+                const author = cells[1].textContent;
+                const student = cells[2].textContent;
+                const issueDate = cells[3].textContent;
+                const returnDate = cells[4].textContent;
+                
+                // Set modal content
+                document.getElementById('approveModalBook').textContent = bookTitle;
+                document.getElementById('approveModalAuthor').textContent = `by ${author}`;
+                document.getElementById('approveModalStudent').textContent = `Requested by: ${student}`;
+                document.getElementById('approveModalIssueDate').textContent = `Issue Date: ${issueDate}`;
+                document.getElementById('approveModalReturnDate').textContent = `Return Date: ${returnDate}`;
+                
+                // Set confirm button action
+                document.getElementById('approveModalConfirm').onclick = () => {
+                    form.submit();
+                };
+                
+                // Show modal
+                approveModal.style.display = 'block';
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "layout.html" %}
+
+{% block title %}Student Portal - Library Management System{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <a href="{{ url_for('index') }}" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h1>Student Portal</h1>
+            <p>Login or register to access the library</p>
+        </div>
+        <div class="login-content">
+            <div class="tabs">
+                <div class="tab-header">
+                    <div class="tab active" data-tab="login">Login</div>
+                    <div class="tab" data-tab="register">Register</div>
+                </div>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="login">
+                        <form action="{{ url_for('student_login') }}" method="POST">
+                            <input type="hidden" name="action" value="login">
+                            <div class="form-group">
+                                <label for="login-username">Username</label>
+                                <input type="text" id="login-username" name="username" placeholder="Enter your username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="login-password">Password</label>
+                                <input type="password" id="login-password" name="password" placeholder="Enter your password" required>
+                            </div>
+                            <button type="submit" class="login-button">Login</button>
+                        </form>
+                    </div>
+                    <div class="tab-pane" id="register">
+                        <form action="{{ url_for('student_login') }}" method="POST">
+                            <input type="hidden" name="action" value="register">
+                            <div class="form-group">
+                                <label for="register-name">Full Name</label>
+                                <input type="text" id="register-name" name="name" placeholder="Enter your full name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="register-username">Username</label>
+                                <input type="text" id="register-username" name="username" placeholder="Choose a username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="register-password">Password</label>
+                                <input type="password" id="register-password" name="password" placeholder="Choose a password" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="register-roll">Roll Number</label>
+                                <input type="text" id="register-roll" name="roll_no" placeholder="Enter your roll number" required>
+                            </div>
+                            <button type="submit" class="login-button">Register</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="login-footer">
+            <p>{{ session['students']|length }} students registered</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabs = document.querySelectorAll('.tab');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                
+                // Remove active class from all tabs and panes
+                tabs.forEach(t => t.classList.remove('active'));
+                tabPanes.forEach(p => p.classList.remove('active'));
+                
+                // Add active class to current tab and pane
+                this.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+    });
+</script>
+{% endblock %}

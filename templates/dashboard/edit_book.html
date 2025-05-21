@@ -1,0 +1,60 @@
+{% extends "dashboard/layout.html" %}
+
+{% block title %}Edit Book - Library Management System{% endblock %}
+
+{% block dashboard_content %}
+<div class="edit-book-page">
+    <div class="page-header">
+        <a href="{{ url_for('books') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="page-title">Edit Book</h1>
+    </div>
+
+    <div class="form-card">
+        <div class="form-header">
+            <h2>Book Details</h2>
+            <p>Update the details of the book.</p>
+        </div>
+        <div class="form-content">
+            <form action="{{ url_for('edit_book', book_id=book.id) }}" method="POST" id="edit-book-form">
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" name="title" value="{{ book.title }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="author">Author</label>
+                    <input type="text" id="author" name="author" value="{{ book.author }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="isbn">ISBN</label>
+                    <input type="text" id="isbn" name="isbn" value="{{ book.isbn }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="genre">Genre</label>
+                    <select id="genre" name="genre">
+                        <option value="">Select genre</option>
+                        <option value="Fiction" {% if book.genre == 'Fiction' %}selected{% endif %}>Fiction</option>
+                        <option value="Non-Fiction" {% if book.genre == 'Non-Fiction' %}selected{% endif %}>Non-Fiction</option>
+                        <option value="Science Fiction" {% if book.genre == 'Science Fiction' %}selected{% endif %}>Science Fiction</option>
+                        <option value="Fantasy" {% if book.genre == 'Fantasy' %}selected{% endif %}>Fantasy</option>
+                        <option value="Mystery" {% if book.genre == 'Mystery' %}selected{% endif %}>Mystery</option>
+                        <option value="Romance" {% if book.genre == 'Romance' %}selected{% endif %}>Romance</option>
+                        <option value="Thriller" {% if book.genre == 'Thriller' %}selected{% endif %}>Thriller</option>
+                        <option value="Biography" {% if book.genre == 'Biography' %}selected{% endif %}>Biography</option>
+                        <option value="History" {% if book.genre == 'History' %}selected{% endif %}>History</option>
+                        <option value="Science" {% if book.genre == 'Science' %}selected{% endif %}>Science</option>
+                        <option value="Technology" {% if book.genre == 'Technology' %}selected{% endif %}>Technology</option>
+                        <option value="Self-Help" {% if book.genre == 'Self-Help' %}selected{% endif %}>Self-Help</option>
+                        <option value="Other" {% if book.genre == 'Other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        <div class="form-footer">
+            <a href="{{ url_for('books') }}" class="cancel-button">Cancel</a>
+            <button type="submit" form="edit-book-form" class="submit-button">Save Changes</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

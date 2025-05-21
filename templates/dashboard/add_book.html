@@ -1,0 +1,60 @@
+{% extends "dashboard/layout.html" %}
+
+{% block title %}Add Book - Library Management System{% endblock %}
+
+{% block dashboard_content %}
+<div class="add-book-page">
+    <div class="page-header">
+        <a href="{{ url_for('books') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="page-title">Add New Book</h1>
+    </div>
+
+    <div class="form-card">
+        <div class="form-header">
+            <h2>Book Details</h2>
+            <p>Enter the details of the new book to add it to the library.</p>
+        </div>
+        <div class="form-content">
+            <form action="{{ url_for('add_book') }}" method="POST" id="add-book-form">
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" name="title" placeholder="Enter book title" required>
+                </div>
+                <div class="form-group">
+                    <label for="author">Author</label>
+                    <input type="text" id="author" name="author" placeholder="Enter author name" required>
+                </div>
+                <div class="form-group">
+                    <label for="isbn">ISBN</label>
+                    <input type="text" id="isbn" name="isbn" placeholder="Enter ISBN number" required>
+                </div>
+                <div class="form-group">
+                    <label for="genre">Genre</label>
+                    <select id="genre" name="genre">
+                        <option value="">Select genre</option>
+                        <option value="Fiction">Fiction</option>
+                        <option value="Non-Fiction">Non-Fiction</option>
+                        <option value="Science Fiction">Science Fiction</option>
+                        <option value="Fantasy">Fantasy</option>
+                        <option value="Mystery">Mystery</option>
+                        <option value="Romance">Romance</option>
+                        <option value="Thriller">Thriller</option>
+                        <option value="Biography">Biography</option>
+                        <option value="History">History</option>
+                        <option value="Science">Science</option>
+                        <option value="Technology">Technology</option>
+                        <option value="Self-Help">Self-Help</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        <div class="form-footer">
+            <a href="{{ url_for('books') }}" class="cancel-button">Cancel</a>
+            <button type="submit" form="add-book-form" class="submit-button">Add Book</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

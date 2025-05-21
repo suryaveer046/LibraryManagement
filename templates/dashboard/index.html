@@ -1,0 +1,73 @@
+{% extends "dashboard/layout.html" %}
+
+{% block title %}Dashboard - Library Management System{% endblock %}
+
+{% block dashboard_content %}
+<div class="dashboard-page">
+    <h1 class="page-title">Hello, {{ session.user_name }}</h1>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-header">
+                <h3>Total Books</h3>
+                <i class="fas fa-book-open"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ total_books }}</div>
+                <p class="stat-description">Books in the library</p>
+            </div>
+        </div>
+
+        {% if session.user_role == 'admin' %}
+        <div class="stat-card">
+            <div class="stat-header">
+                <h3>Total Students</h3>
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ total_students }}</div>
+                <p class="stat-description">Registered students</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <h3>{% if session.user_role == 'admin' %}Total Issued Books{% else %}My Issued Books{% endif %}</h3>
+                <i class="fas fa-book"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ user_issued }}</div>
+                <p class="stat-description">{% if session.user_role == 'admin' %}Books currently issued{% else %}Books you have borrowed{% endif %}</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <h3>Available Books</h3>
+                <i class="fas fa-bookmark"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ available_books }}</div>
+                <p class="stat-description">Books available for issue</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="welcome-card">
+        <div class="welcome-header">
+            <h2>Welcome to the Library Management System</h2>
+            <p>{% if session.user_role == 'admin' %}Manage books, users, and book issues from the sidebar menu.{% else %}Browse books and manage your book issues from the sidebar menu.{% endif %}</p>
+        </div>
+        <div class="welcome-content">
+            <p>
+                {% if session.user_role == 'admin' %}
+                As an administrator, you have full access to all features of the system. You can add, edit, and delete books, manage users, and handle book issues and returns.
+                {% else %}
+                As a student, you can browse the library catalog, request books, and view your currently issued books.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
