@@ -2,8 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 import json
 import os
 from datetime import datetime, timedelta
-import uuid 
-  
+import uuid
+
 app = Flask(__name__) 
 app.secret_key = 'library-management-system-secret-key'
 app.config['SESSION_TYPE'] = 'filesystem'
