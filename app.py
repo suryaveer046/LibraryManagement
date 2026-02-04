@@ -4,7 +4,7 @@ import os
 from datetime import datetime, timedelta
 import uuid 
   
-app = Flask(__name__)
+app = Flask(__name__) 
 app.secret_key = 'library-management-system-secret-key'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
